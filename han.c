@@ -295,7 +295,7 @@ void han_split_jong(char chr, han_reg *reg)
 {
 	unsigned buffer;
 	if (reg->jong >= 41)
-		buffer = han_break_jong(reg);
+		buffer = han_break(&(reg->jong));
 	else {
 		buffer = reg->jong;
 		reg->jong = 0;
@@ -307,53 +307,53 @@ void han_split_jong(char chr, han_reg *reg)
 }
 
 
-unsigned han_break_jong(han_reg *reg)
+unsigned han_break(unsigned *cho_jong)
 {
 	unsigned ret;
 
-	switch (reg->jong) {
+	switch (*cho_jong) {
 	case 41:				/* ㄳ */
-		reg->jong = 1;
+		*cho_jong = 1;
 		ret = 10;
 		break;
 	case 42:				/* ㄵ */
-		reg->jong = 3;
+		*cho_jong = 3;
 		ret = 13;
 		break;
 	case 43:				/* ㄶ */
-		reg->jong = 3;
+		*cho_jong = 3;
 		ret = 19;
 		break;
 	case 44:				/* ㄺ */
-		reg->jong = 6;
+		*cho_jong = 6;
 		ret = 1;
 		break;
 	case 45:				/* ㄻ */
-		reg->jong = 6;
+		*cho_jong = 6;
 		ret = 7;
 		break;
 	case 46:				/* ㄼ */
-		reg->jong = 6;
+		*cho_jong = 6;
 		ret = 8;
 		break;
 	case 47:				/* ㄽ */
-		reg->jong = 6;
+		*cho_jong = 6;
 		ret = 10;
 		break;
 	case 48:				/* ㄾ */
-		reg->jong = 6;
+		*cho_jong = 6;
 		ret = 17;
 		break;
 	case 49:				/* ㄿ */
-		reg->jong = 6;
+		*cho_jong = 6;
 		ret = 18;
 		break;
 	case 50:				/* ㅀ */
-		reg->jong = 6;
+		*cho_jong = 6;
 		ret = 19;
 		break;
 	case 51:				/* ㅄ */
-		reg->jong = 8;
+		*cho_jong = 8;
 		ret = 10;
 		break;
 	}
@@ -365,35 +365,35 @@ unsigned han_break_jong(han_reg *reg)
 void han_dmo(char chr, han_reg *reg)
 {
 	switch (reg->jung) {
-	case 28:				/* ㅗ */
+	case 28:					/* ㅗ */
 		switch (chr) {
-		case 'k':			/* ㅘ */
+		case 'k':				/* ㅘ */
 			reg->jung = 29;
 			break;
-		case 'o':			/* ㅙ */
+		case 'o':				/* ㅙ */
 			reg->jung = 30;
 			break;
-		case 'l':			/* ㅚ */
+		case 'l':				/* ㅚ */
 			reg->jung = 31;
 			break;
 		}
 		break;
-	case 33:				/* ㅜ */
+	case 33:					/* ㅜ */
 		switch (chr) {
-		case 'j':			/* ㅝ */
+		case 'j':				/* ㅝ */
 			reg->jung = 34;
 			break;
-		case 'p':			/* ㅞ */
+		case 'p':				/* ㅞ */
 			reg->jung = 35;
 			break;
-		case 'l':			/* ㅟ */
+		case 'l':				/* ㅟ */
 			reg->jung = 36;
 			break;
 		}
 		break;
-	case 38:				/* ㅡ */
+	case 38:					/* ㅡ */
 		if (chr == 'l')
-			reg->jung = 39;	/* ㅢ */
+			reg->jung = 39;		/* ㅢ */
 		break;
 	default:
 		han_insert_p(reg);
@@ -449,6 +449,12 @@ void han_mo(char chr, han_reg *reg)
 		han_dmo(chr, reg);
 		break;
 	case 3:
+		if (reg->cho >= 41) {
+			unsigned buffer = han_break(&(reg->cho));
+			han_insert_p(reg);
+			reg->cho = buffer;
+			reg->jung = HAN_T(chr);
+		}
 	case 5:
 		reg->jung = HAN_T(chr);
 		break;

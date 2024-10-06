@@ -32,6 +32,6 @@ void han_jong(char chr, han_reg *reg);
 void han_dmo(char chr, han_reg *reg);
 void han_dja(char chr, unsigned *cho_jong, han_reg *reg);
 void han_split_jong(char chr, han_reg *reg);
-unsigned han_break_jong(han_reg *reg);
+unsigned han_break(unsigned *cho_jong);
 void han_cho_p(han_reg *reg);
 void han_jong_p(han_reg *reg);
