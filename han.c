@@ -83,7 +83,9 @@ void han_trans(char chr, han_reg *reg)
 	case '^':
 	case '_':
 	case '`':
-		putchar(chr);
+		han_insert_p(reg);
+		han_print_p(reg);
+		putwchar(chr);
 	}
 }
 
