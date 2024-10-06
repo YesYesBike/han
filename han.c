@@ -235,65 +235,57 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 {
 	unsigned buf = *cho_jong;
 	switch (buf) {
-	case 1:					/* ㄱ */
-		if (chr == 't')
-			buf = 41;		/* ㄳ */
-		else
-			goto HAN_DJA_ESCAPE;
-		break;
-	case 3:					/* ㄴ */
-		switch (chr) {
-		case 'w':			/* ㄵ */
-			buf = 42;
-			break;
-		case 'g':			/* ㄶ */
-			buf = 43;
-			break;
-		default:
-			goto HAN_DJA_ESCAPE;
+	case 1:						/* ㄱ */
+		if (chr == 't') {
+			*cho_jong = 41;		/* ㄳ */
+			return;
 		}
 		break;
-	case 6:					/* ㄹ */
+	case 3:						/* ㄴ */
 		switch (chr) {
-		case 'r':			/* ㄺ */
-			buf = 44;
-			break;
-		case 'a':			/* ㄻ */
-			buf = 45;
-			break;
-		case 'q':			/* ㄼ */
-			buf = 46;
-			break;
-		case 't':			/* ㄽ */
-			buf = 47;
-			break;
-		case 'x':			/* ㄾ */
-			buf = 48;
-			break;
-		case 'v':			/* ㄿ */
-			buf = 49;
-			break;
-		case 'g':			/* ㅀ */
-			buf = 50;
-			break;
-		default:
-			goto HAN_DJA_ESCAPE;
+		case 'w':				/* ㄵ */
+			*cho_jong = 42;
+			return;
+		case 'g':				/* ㄶ */
+			*cho_jong = 43;
+			return;
 		}
 		break;
-	case 8:					/* ㅂ */
-		if (chr == 't')
-			buf = 51;		/* ㅄ */
-		else
-			goto HAN_DJA_ESCAPE;
+	case 6:						/* ㄹ */
+		switch (chr) {
+		case 'r':				/* ㄺ */
+			*cho_jong = 44;
+			return;
+		case 'a':				/* ㄻ */
+			*cho_jong = 45;
+			return;
+		case 'q':				/* ㄼ */
+			*cho_jong = 46;
+			return;
+		case 't':				/* ㄽ */
+			*cho_jong = 47;
+			return;
+		case 'x':				/* ㄾ */
+			*cho_jong = 48;
+			return;
+		case 'v':				/* ㄿ */
+			*cho_jong = 49;
+			return;
+		case 'g':				/* ㅀ */
+			*cho_jong = 49;
+			return;
+		}
 		break;
-	default:
-HAN_DJA_ESCAPE:
-		han_insert_p(reg);
-		reg->cho = HAN_T(chr);
-		return;
+	case 8:						/* ㅂ */
+		if (chr == 't') {
+			*cho_jong = 51;		/* ㅄ */
+			return;
+		}
+		break;
 	}
-
-	*cho_jong = buf;
+	han_insert_p(reg);
+	reg->cho = HAN_T(chr);
+	return;
 }
 
 
