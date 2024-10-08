@@ -407,7 +407,7 @@ unsigned han_check_reg(han_reg *reg)
 {
 	if (reg->cho != 0) {
 		if (reg->jung != 0)
-			return ((reg->jong) ? 1 : 2);
+			return (reg->jong) ? 1 : 2;
 		else
 			return 3;
 	} else {
@@ -469,7 +469,7 @@ void han(wchar_t *str, han_reg *reg)
 			han_print_p(reg);
 
 		if (str[i]<'A' || str[i]>'z') {
-			if (reg->cho + reg->jung + reg->jong) {
+			if (reg->cho || reg->jung) {
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
