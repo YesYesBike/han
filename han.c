@@ -1,6 +1,6 @@
 #include "han.h"
 
-char han_table[] = {
+const char _han_table[] = {
 	7,  37, 15, 12, 5,  6,  19,  28, 22, 24, 20, 40, 38, 33, 23,
     27, 9,  2,  3,  11, 26, 18,  14, 17, 32, 16, 70, 70, 70, 70,
     70, 70, 7,  37, 15, 12, 4,   6,  19, 28, 22, 24, 20, 40, 38,
@@ -111,7 +111,7 @@ void han_insert_p(han_reg *reg)
 
 void han_combine_p(han_reg *reg)
 {
-	if (reg->jong != 0)
+	if (reg->jong >= 3)
 		han_jong_p(reg);
 
 	(reg->cho)--;
@@ -179,9 +179,9 @@ void han_cho_p(han_reg *reg)
 void han_jong_p(han_reg *reg)
 {
 	switch (reg->jong) {
-	case 1:
-	case 2:
-		break;
+	//case 1:
+	//case 2:
+	//	break;
 	case 41:					/* ㄳ */
 		reg->jong = 3;
 		break;
@@ -407,7 +407,7 @@ unsigned han_check_reg(han_reg *reg)
 {
 	if (reg->cho != 0) {
 		if (reg->jung != 0)
-			return (reg->jong) ? 1 : 2;
+			return reg->jong ? 1 : 2;
 		else
 			return 3;
 	} else {
@@ -468,6 +468,9 @@ void han(wchar_t *str, han_reg *reg)
 		if (reg->p)
 			han_print_p(reg);
 
+		if (reg->flag&1 && str[i] == '\n')
+			continue;
+
 		if (str[i]<'A' || str[i]>'z') {
 			if (reg->cho || reg->jung) {
 				han_insert_p(reg);
@@ -484,11 +487,39 @@ void han(wchar_t *str, han_reg *reg)
 }
 
 
-int main(void)
+void help(void)
+{
+	printf("[한영타 변환기 도움말]\n\
+사용법: 표준 입출력에서 알파벳을 한글로 변환해야 할 상황에서 활용할 수 있음.\n\
+옵션\n\
+-h: 지금 보고 있는 것.\n\
+-c: 개행문자를 제외하고 출력.\n");
+
+	exit(EXIT_SUCCESS);
+}
+
+
+int main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
 	wchar_t buffer[BUFSIZE];
 	han_reg reg = {};
+	int opt;
+	opterr = 0;
+
+	while ((opt = getopt(argc, argv, "ch")) != -1) {
+		switch (opt) {
+		case 'c':
+			reg.flag |= 1;
+			break;
+		case 'h':
+			help();
+		case '?':
+			fprintf(stderr, "사용법: %s [-c] [-h]\n",
+					argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	while (fgetws(buffer, BUFSIZE, stdin) != NULL)
 		han(buffer, &reg);

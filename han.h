@@ -1,13 +1,16 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <wchar.h>
 #include <locale.h>
+#include <unistd.h>
 
 #define BUFSIZE		1024
 //#define HAN_FIRST	0xAC00
 //#define HAN_LAST	0xD7A3
-#define HAN_T(a)	han_table[(a)-'A']
+#define HAN_T(a)	_han_table[(a)-'A']
 
 typedef struct __han_reg {
+	unsigned flag;
 	unsigned cho;
 	unsigned jung;
 	unsigned jong;
@@ -15,6 +18,7 @@ typedef struct __han_reg {
 } han_reg;
 
 
+void help(void);
 void han(wchar_t *str, han_reg *reg);
 void han_trans(char chr, han_reg *reg);
 void han_ja(char chr, han_reg *reg);
