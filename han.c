@@ -274,7 +274,7 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 			*cho_jong = 49;
 			return;
 		case 'g':				/* ㅀ */
-			*cho_jong = 49;
+			*cho_jong = 50;
 			return;
 		}
 		break;
