@@ -1,11 +1,13 @@
 #include "han.h"
 
-const char _han_table[] = {
+const char han_table[] = {
 	7,  37, 15, 12, 5,  6,  19,  28, 22, 24, 20, 40, 38, 33, 23,
     27, 9,  2,  3,  11, 26, 18,  14, 17, 32, 16, 70, 70, 70, 70,
     70, 70, 7,  37, 15, 12, 4,   6,  19, 28, 22, 24, 20, 40, 38,
     33, 21, 25, 8,  1,  3,  10,  26, 18, 13, 17, 32, 16
 };
+
+int escape = 0;
 
 void han_print_p(han_reg *reg)
 {
@@ -466,11 +468,13 @@ void han_mo(char chr, han_reg *reg)
 
 void han(wchar_t *str, han_reg *reg)
 {
+	extern int escape;
+
 	for (int i=0; str[i] != '\0'; i++) {
 		if (reg->p)
 			han_print_p(reg);
 
-		if (reg->flag&1 && str[i] == '\n')
+		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
 
 		if (str[i]<'A' || str[i]>'z') {
@@ -485,9 +489,6 @@ void han(wchar_t *str, han_reg *reg)
 		else
 			han_trans(str[i], reg);
 	}
-
-	han_insert_p(reg);
-	han_print_p(reg);
 }
 
 
@@ -498,6 +499,8 @@ void help(void)
 옵션\n\
 -h: 지금 보고 있는 것.\n\
 -c: 개행문자를 제외하고 출력.\n\
+-e: $부터 다음 $까지 한글 변환 무시($는 미출력).\n\
+    $를 입력하고 싶으면 두 번 입력.\n\
 -t: stdin과 파일에 동시 출력(tee)\n\
 -T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
 
@@ -514,10 +517,13 @@ int main(int argc, char *argv[])
 	opterr = 0;
 	char t_optstr[] = "w";
 
-	while ((opt = getopt(argc, argv, "chT:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "cehT:t:")) != -1) {
 		switch (opt) {
 		case 'c':
 			reg.flag |= HAN_FLAG_C;
+			break;
+		case 'e':
+			reg.flag |= HAN_FLAG_E;
 			break;
 		case 'h':
 			help();
@@ -540,6 +546,9 @@ int main(int argc, char *argv[])
 
 	while (fgetws(buffer, BUFSIZE, stdin) != NULL)
 		han(buffer, &reg);
+
+	han_insert_p(&reg);
+	han_print_p(&reg);
 
 	if (reg.flag & HAN_FLAG_T) {
 		if (fclose(reg.fd) != 0) {

@@ -5,15 +5,13 @@
 #include <unistd.h>
 
 #define BUFSIZE		1024
-//#define HAN_FIRST	0xAC00
-//#define HAN_LAST	0xD7A3
-#define HAN_T(a)	_han_table[(a)-'A']
+#define HAN_T(a)	han_table[(a)-'A']
 
+#define HAN_FLAG_C		1
+#define HAN_FLAG_T		1 << 1
+#define HAN_FLAG_E		1 << 2
 
-#define HAN_FLAG_C	1
-#define HAN_FLAG_T	1 << 1
-
-typedef struct __han_reg {
+typedef struct han_reg {
 	unsigned	flag;
 	unsigned 	cho;
 	unsigned 	jung;
