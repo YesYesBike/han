@@ -9,12 +9,17 @@
 //#define HAN_LAST	0xD7A3
 #define HAN_T(a)	_han_table[(a)-'A']
 
+
+#define HAN_FLAG_C	1
+#define HAN_FLAG_T	1 << 1
+
 typedef struct __han_reg {
-	unsigned flag;
-	unsigned cho;
-	unsigned jung;
-	unsigned jong;
-	wchar_t p;
+	unsigned	flag;
+	unsigned 	cho;
+	unsigned 	jung;
+	unsigned 	jong;
+	FILE		*fd;
+	wchar_t		p;
 } han_reg;
 
 

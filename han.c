@@ -11,6 +11,8 @@ void han_print_p(han_reg *reg)
 {
 	if (reg->p == 0)
 		return;
+	if (reg->flag & HAN_FLAG_T)
+		fputwc(reg->p, reg->fd);
 	putwchar(reg->p);
 	reg->p = 0;
 }
@@ -477,6 +479,8 @@ void han(wchar_t *str, han_reg *reg)
 				han_print_p(reg);
 			}
 			putwchar(str[i]);
+			if (reg->flag & HAN_FLAG_T)
+				fputwc(str[i], reg->fd);
 		}
 		else
 			han_trans(str[i], reg);
@@ -493,7 +497,9 @@ void help(void)
 사용법: 표준 입출력에서 알파벳을 한글로 변환해야 할 상황에서 활용할 수 있음.\n\
 옵션\n\
 -h: 지금 보고 있는 것.\n\
--c: 개행문자를 제외하고 출력.\n");
+-c: 개행문자를 제외하고 출력.\n\
+-t: stdin과 파일에 동시 출력(tee)\n\
+-T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -506,16 +512,27 @@ int main(int argc, char *argv[])
 	han_reg reg = {};
 	int opt;
 	opterr = 0;
+	char t_optstr[] = "w";
 
-	while ((opt = getopt(argc, argv, "ch")) != -1) {
+	while ((opt = getopt(argc, argv, "chT:t:")) != -1) {
 		switch (opt) {
 		case 'c':
-			reg.flag |= 1;
+			reg.flag |= HAN_FLAG_C;
 			break;
 		case 'h':
 			help();
+		case 'T':
+			t_optstr[0] = 'a';
+		case 't':
+			reg.flag |= HAN_FLAG_T;
+			if ((reg.fd = fopen(optarg, t_optstr)) == NULL) {
+				fprintf(stderr,
+						"%s: open error\n", optarg);
+				exit(EXIT_FAILURE);
+			}
+			break;
 		case '?':
-			fprintf(stderr, "사용법: %s [-c] [-h]\n",
+			fprintf(stderr, "사용법: %s [-c] [-h] [-t|T 파일]\n",
 					argv[0]);
 			exit(EXIT_FAILURE);
 		}
@@ -523,6 +540,14 @@ int main(int argc, char *argv[])
 
 	while (fgetws(buffer, BUFSIZE, stdin) != NULL)
 		han(buffer, &reg);
+
+	if (reg.flag & HAN_FLAG_T) {
+		if (fclose(reg.fd) != 0) {
+			fprintf(stderr,
+					"%s: close error\n", optarg);
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	return 0;
 }
