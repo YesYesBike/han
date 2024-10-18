@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case '?':
-			fprintf(stderr, "사용법: %s [-c] [-h] [-t|T 파일]\n",
+			fprintf(stderr, "사용법: %s [-c] [-e] [-h] [-t|T 파일]\n",
 					argv[0]);
 			exit(EXIT_FAILURE);
 		}
