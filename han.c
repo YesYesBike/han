@@ -477,13 +477,20 @@ void han(wchar_t *str, han_reg *reg)
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
 		if (str[i] == '$' && reg->flag & HAN_FLAG_E) {
-			if (!escape) {
+			if (escape == 2) {
+				escape = escape ? 0 : 1;
+				putwchar('$');
+				continue;
+			}
+			if (escape == 0) {
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
-			escape = escape ? 0 : 1;
+			escape = escape ? 0 : 2;
 			continue;
 		}
+		if (escape == 2)
+			escape--;
 		if (escape)
 			goto HAN_L_ESCAPE;
 
