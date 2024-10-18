@@ -476,12 +476,23 @@ void han(wchar_t *str, han_reg *reg)
 
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
+		if (str[i] == '$' && reg->flag & HAN_FLAG_E) {
+			if (!escape) {
+				han_insert_p(reg);
+				han_print_p(reg);
+			}
+			escape = escape ? 0 : 1;
+			continue;
+		}
+		if (escape)
+			goto HAN_L_ESCAPE;
 
 		if (str[i]<'A' || str[i]>'z') {
 			if (reg->cho || reg->jung) {
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
+HAN_L_ESCAPE:
 			putwchar(str[i]);
 			if (reg->flag & HAN_FLAG_T)
 				fputwc(str[i], reg->fd);
