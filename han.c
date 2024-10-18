@@ -8,6 +8,7 @@ const char han_table[] = {
 };
 
 int escape = 0;
+int bef_dollar = 0;
 
 void han_print_p(han_reg *reg)
 {
@@ -469,6 +470,7 @@ void han_mo(char chr, han_reg *reg)
 void han(wchar_t *str, han_reg *reg)
 {
 	extern int escape;
+	extern int bef_dollar;
 
 	for (int i=0; str[i] != '\0'; i++) {
 		if (reg->p)
@@ -477,8 +479,9 @@ void han(wchar_t *str, han_reg *reg)
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
 		if (str[i] == '$' && reg->flag & HAN_FLAG_E) {
-			if (escape == 2) {
+			if (bef_dollar) {
 				escape = escape ? 0 : 1;
+				bef_dollar = 0;
 				putwchar('$');
 				continue;
 			}
@@ -486,11 +489,11 @@ void han(wchar_t *str, han_reg *reg)
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
-			escape = escape ? 0 : 2;
+			escape = escape ? 0 : 1;
+			bef_dollar = 1;
 			continue;
 		}
-		if (escape == 2)
-			escape--;
+		bef_dollar = 0;
 		if (escape)
 			goto HAN_L_ESCAPE;
 
