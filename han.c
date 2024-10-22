@@ -1,10 +1,10 @@
 #include "han.h"
 
 const char han_table[] = {
-	7,  37, 15, 12, 5,  6,  19,  28, 22, 24, 20, 40, 38, 33, 23,
-    27, 9,  2,  3,  11, 26, 18,  14, 17, 32, 16, 70, 70, 70, 70,
-    70, 70, 7,  37, 15, 12, 4,   6,  19, 28, 22, 24, 20, 40, 38,
-    33, 21, 25, 8,  1,  3,  10,  26, 18, 13, 17, 32, 16
+	7,  37, 15, 12, 5,  6,  19, 28, 22, 24, 20, 40, 38, 33, 23,
+	27, 9,  2,  3,  11, 26, 18, 14, 17, 32, 16, 70, 70, 70, 70,
+	70, 70, 7,  37, 15, 12, 4,  6,  19, 28, 22, 24, 20, 40, 38,
+	33, 21, 25, 8,  1,  3,  10, 26, 18, 13, 17, 32, 16
 };
 
 int escape = 0;
@@ -90,6 +90,8 @@ void han_trans(char chr, han_reg *reg)
 	case '`':
 		han_insert_p(reg);
 		han_print_p(reg);
+		if (reg->flag & HAN_FLAG_T)
+			fputwc(chr, reg->fd);
 		putwchar(chr);
 	}
 }
@@ -97,7 +99,7 @@ void han_trans(char chr, han_reg *reg)
 
 void han_insert_p(han_reg *reg)
 {
-	unsigned checksum = (reg->cho) + (reg->jung) + (reg->jong);
+	unsigned checksum = reg->cho + reg->jung + reg->jong;
 	if (checksum == 0)
 		return;
 	
@@ -244,7 +246,7 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 	switch (buf) {
 	case 1:						/* ㄱ */
 		if (chr == 't') {
-			*cho_jong = 41;		/* ㄳ */
+			*cho_jong = 41;			/* ㄳ */
 			return;
 		}
 		break;
@@ -285,7 +287,7 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 		break;
 	case 8:						/* ㅂ */
 		if (chr == 't') {
-			*cho_jong = 51;		/* ㅄ */
+			*cho_jong = 51;			/* ㅄ */
 			return;
 		}
 		break;
@@ -299,9 +301,9 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 void han_split_jong(char chr, han_reg *reg)
 {
 	unsigned buffer;
-	if (reg->jong >= 41)
+	if (reg->jong >= 41) {
 		buffer = han_break(&(reg->jong));
-	else {
+	} else {
 		buffer = reg->jong;
 		reg->jong = 0;
 	}
@@ -398,7 +400,7 @@ void han_dmo(char chr, han_reg *reg)
 		break;
 	case 38:					/* ㅡ */
 		if (chr == 'l')
-			reg->jung = 39;		/* ㅢ */
+			reg->jung = 39;			/* ㅢ */
 		break;
 	default:
 		han_insert_p(reg);
@@ -506,9 +508,9 @@ HAN_L_ESCAPE:
 			putwchar(str[i]);
 			if (reg->flag & HAN_FLAG_T)
 				fputwc(str[i], reg->fd);
-		}
-		else
+		} else {
 			han_trans(str[i], reg);
+		}
 	}
 }
 
@@ -521,7 +523,7 @@ void help(void)
 -h: 지금 보고 있는 것.\n\
 -c: 개행문자를 제외하고 출력.\n\
 -e: $부터 다음 $까지 한글 변환 무시($는 미출력).\n\
-    $를 입력하고 싶으면 두 번 입력.\n\
+	$를 입력하고 싶으면 두 번 입력.\n\
 -t: stdin과 파일에 동시 출력(tee)\n\
 -T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
 
@@ -559,8 +561,8 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case '?':
-			fprintf(stderr, "사용법: %s [-c] [-e] [-h] [-t|T 파일]\n",
-					argv[0]);
+			fprintf(stderr,
+					"사용법: %s [-c] [-e] [-h] [-t|T 파일]\n", argv[0]);
 			exit(EXIT_FAILURE);
 		}
 	}
