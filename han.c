@@ -530,6 +530,15 @@ void help(void)
 	exit(EXIT_SUCCESS);
 }
 
+void print_error(char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	exit(EXIT_FAILURE);
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -554,16 +563,12 @@ int main(int argc, char *argv[])
 			t_optstr[0] = 'a';
 		case 't':
 			reg.flag |= HAN_FLAG_T;
-			if ((reg.fd = fopen(optarg, t_optstr)) == NULL) {
-				fprintf(stderr,
-						"%s: open error\n", optarg);
-				exit(EXIT_FAILURE);
-			}
+			if ((reg.fd = fopen(optarg, t_optstr)) == NULL)
+				print_error("%s: open error\n", optarg);
 			break;
 		case '?':
-			fprintf(stderr,
-					"사용법: %s [-c] [-e] [-h] [-t|T 파일]\n", argv[0]);
-			exit(EXIT_FAILURE);
+			print_error(
+				"사용법: %s [-c] [-e] [-h] [-t|T 파일]\n", argv[0]);
 		}
 	}
 
@@ -574,11 +579,9 @@ int main(int argc, char *argv[])
 	han_print_p(&reg);
 
 	if (reg.flag & HAN_FLAG_T) {
-		if (fclose(reg.fd) != 0) {
-			fprintf(stderr,
-					"%s: close error\n", optarg);
-			exit(EXIT_FAILURE);
-		}
+		//TODO 여러 파일
+		if (fclose(reg.fd) != 0)
+			print_error("close error\n");
 	}
 
 	return 0;

@@ -3,6 +3,7 @@
 #include <wchar.h>
 #include <locale.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #define BUFSIZE		1024
 #define HAN_T(a)	han_table[(a)-'A']
@@ -22,6 +23,7 @@ typedef struct han_reg {
 
 
 void help(void);
+void print_error(char *fmt, ...);
 void han(wchar_t *str, han_reg *reg);
 void han_trans(char chr, han_reg *reg);
 void han_ja(char chr, han_reg *reg);
