@@ -7,13 +7,18 @@ static const char han_table[] = {
 	33, 21, 25, 8,  1,  3,  10, 26, 18, 13, 17, 32, 16
 };
 
+inline void han_putc(han_reg *reg, wchar_t chr)
+{
+	if (reg->flag & HAN_FLAG_T)
+		fputwc(chr, reg->fd);
+	putwchar(chr);
+}
+
 void han_print_p(han_reg *reg)
 {
 	if (reg->p == 0)
 		return;
-	if (reg->flag & HAN_FLAG_T)
-		fputwc(reg->p, reg->fd);
-	putwchar(reg->p);
+	han_putc(reg, reg->p);
 	reg->p = 0;
 }
 
@@ -87,9 +92,7 @@ void han_trans(char chr, han_reg *reg)
 	case '`':
 		han_insert_p(reg);
 		han_print_p(reg);
-		if (reg->flag & HAN_FLAG_T)
-			fputwc(chr, reg->fd);
-		putwchar(chr);
+		han_putc(reg, chr);
 	}
 }
 
@@ -478,33 +481,38 @@ void han(wchar_t *str, han_reg *reg)
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
 		if (str[i] == '$' && reg->flag & HAN_FLAG_E) {
+			escape = escape ? 0 : 1;
+
+			if (reg->flag & HAN_FLAG_EE) {
+				han_putc(reg, '$');
+				continue;
+			}
 			if (bef_dollar) {
-				escape = escape ? 0 : 1;
 				bef_dollar = 0;
-				putwchar('$');
+				han_putc(reg, '$');
 				continue;
 			}
 			if (escape == 0) {
+				//TODO 버그 가능성 있음
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
-			escape = escape ? 0 : 1;
 			bef_dollar = 1;
 			continue;
 		}
+
 		bef_dollar = 0;
-		if (escape)
-			goto HAN_L_ESCAPE;
+		if (escape) {
+			han_putc(reg, str[i]);
+			continue;
+		}
 
 		if (str[i]<'A' || str[i]>'z') {
 			if (reg->cho || reg->jung) {
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
-HAN_L_ESCAPE:
-			putwchar(str[i]);
-			if (reg->flag & HAN_FLAG_T)
-				fputwc(str[i], reg->fd);
+			han_putc(reg, str[i]);
 		} else {
 			han_trans(str[i], reg);
 		}
@@ -521,6 +529,7 @@ void help(void)
 -c: 개행문자를 제외하고 출력.\n\
 -e: $부터 다음 $까지 한글 변환 무시($는 미출력).\n\
 	$를 입력하고 싶으면 두 번 입력.\n\
+-E: -e와 달리 $를 그대로 출력.\n\
 -t: stdin과 파일에 동시 출력(tee)\n\
 -T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
 
@@ -546,11 +555,13 @@ int main(int argc, char *argv[])
 	opterr = 0;
 	char t_optstr[] = "w";
 
-	while ((opt = getopt(argc, argv, "cehT:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "ceEhT:t:")) != -1) {
 		switch (opt) {
 		case 'c':
 			reg.flag |= HAN_FLAG_C;
 			break;
+		case 'E':
+			reg.flag |= HAN_FLAG_EE;
 		case 'e':
 			reg.flag |= HAN_FLAG_E;
 			break;
