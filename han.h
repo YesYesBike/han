@@ -4,6 +4,7 @@
 #include <locale.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <stdint.h>
 
 #define BUFSIZE			1024
 #define HAN_T(a)		han_table[(a)-'A']
@@ -14,7 +15,7 @@
 #define HAN_FLAG_EE		1 << 3
 
 typedef struct han_reg {
-	unsigned	flag;
+	uint32_t	flag;
 	unsigned 	cho;
 	unsigned 	jung;
 	unsigned 	jong;

@@ -1,5 +1,6 @@
 #include "han.h"
 
+//A(0x41)~z(0x7A) 아스키에 따른 자모 분류
 static const char han_table[] = {
 	7,  37, 15, 12, 5,  6,  19, 28, 22, 24, 20, 40, 38, 33, 23,
 	27, 9,  2,  3,  11, 26, 18, 14, 17, 32, 16, 70, 70, 70, 70,
@@ -14,6 +15,7 @@ inline void han_putc(han_reg *reg, wchar_t chr)
 	putwchar(chr);
 }
 
+//p레지스터에 있는 글자 출력 후 비우기
 void han_print_p(han_reg *reg)
 {
 	if (reg->p == 0)
@@ -23,6 +25,7 @@ void han_print_p(han_reg *reg)
 }
 
 
+//chr에 해당하는 글자를 한글로 처리
 void han_trans(char chr, han_reg *reg)
 {
 	switch (chr) {
@@ -97,6 +100,7 @@ void han_trans(char chr, han_reg *reg)
 }
 
 
+//초성,중성,종성 레지스터에 저장된 수를 조합해 p레지스터에 저장
 void han_insert_p(han_reg *reg)
 {
 	unsigned checksum = reg->cho + reg->jung + reg->jong;
@@ -116,10 +120,10 @@ void han_insert_p(han_reg *reg)
 }
 
 
+//han_insert_p에서 초성, 중성만 있는 게 아닌 경우에 호출
 void han_combine_p(han_reg *reg)
 {
-	if (reg->jong >= 3)
-		han_jong_p(reg);
+	han_jong_p(reg);
 
 	(reg->cho)--;
 	reg->jung -= 20;
@@ -128,6 +132,7 @@ void han_combine_p(han_reg *reg)
 }
 
 
+//초성 레지스터에 있는 값을 최종 처리 후 p레지스터에 입력
 void han_cho_p(han_reg *reg)
 {
 	switch (reg->cho) {
@@ -183,12 +188,13 @@ void han_cho_p(han_reg *reg)
 }
 
 
+//종성 레지스터에 있는 값을 p레지스터에 입력하기 전 최종적으로 처리
 void han_jong_p(han_reg *reg)
 {
 	switch (reg->jong) {
-	//case 1:
-	//case 2:
-	//	break;
+	case 1:
+	case 2:
+		break;
 	case 41:					/* ㄳ */
 		reg->jong = 3;
 		break;
@@ -240,6 +246,7 @@ void han_jong_p(han_reg *reg)
 }
 
 
+//겹자음 합성. 초성과 종성 두 경우에 맞춰서 유동적으로 적용 가능
 void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 {
 	unsigned buf = *cho_jong;
@@ -298,6 +305,7 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 }
 
 
+//초중종성 레지스터에 값이 있는 상태에서 중성 입력 시 종성 분리
 void han_split_jong(char chr, han_reg *reg)
 {
 	unsigned buffer;
@@ -314,6 +322,7 @@ void han_split_jong(char chr, han_reg *reg)
 }
 
 
+//겹자음 분리. han_dja와 마찬가지
 unsigned han_break(unsigned *cho_jong)
 {
 	unsigned ret;
@@ -369,6 +378,7 @@ unsigned han_break(unsigned *cho_jong)
 }
 
 
+//겹모음
 void han_dmo(char chr, han_reg *reg)
 {
 	switch (reg->jung) {
@@ -410,6 +420,12 @@ void han_dmo(char chr, han_reg *reg)
 }
 
 
+//초성,중성,종성 레지스터 상태 확인.
+//1: 초성,중성,종성 다 있음
+//2: 초성,중성만 있음
+//3: 초성만 있음
+//4: 중성만 있음
+//5: 아무 글자도 없음
 unsigned han_check_reg(han_reg *reg)
 {
 	if (reg->cho != 0) {
@@ -423,6 +439,12 @@ unsigned han_check_reg(han_reg *reg)
 }
 
 
+//han_check_reg 확인
+//1: 겹자음 확인(종성)
+//2: 종성 입력
+//3: 겹자음 확인(초성)
+//4: 글자 출력 후 초성 입력
+//5: 초성 입력
 void han_ja(char chr, han_reg *reg)
 {
 	switch (han_check_reg(reg)) {
@@ -445,6 +467,12 @@ void han_ja(char chr, han_reg *reg)
 }
 
 
+//han_check_reg 확인
+//1: 종성 분리
+//2: 겹모음 입력
+//3: 초성에 올 수 없는 글자(예: ㄳ) 처리 후 중성 입력
+//4: 2와 동일
+//5: 중성 입력
 void han_mo(char chr, han_reg *reg)
 {
 	switch (han_check_reg(reg)) {
@@ -469,6 +497,8 @@ void han_mo(char chr, han_reg *reg)
 }
 
 
+//최초 글자 처리. A-z의 글자만 선별해 한글로 변환
+//이스케이프 여부에 따른 처리도 여기에 포함
 void han(wchar_t *str, han_reg *reg)
 {
 	static int escape = 0;
@@ -481,6 +511,10 @@ void han(wchar_t *str, han_reg *reg)
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
 		if (str[i] == '$' && reg->flag & HAN_FLAG_E) {
+			if (escape == 0) {
+				han_insert_p(reg);
+				han_print_p(reg);
+			}
 			escape = escape ? 0 : 1;
 
 			if (reg->flag & HAN_FLAG_EE) {
@@ -491,11 +525,6 @@ void han(wchar_t *str, han_reg *reg)
 				bef_dollar = 0;
 				han_putc(reg, '$');
 				continue;
-			}
-			if (escape == 0) {
-				//TODO 버그 가능성 있음
-				han_insert_p(reg);
-				han_print_p(reg);
 			}
 			bef_dollar = 1;
 			continue;
@@ -528,9 +557,10 @@ void help(void)
 -h: 지금 보고 있는 것.\n\
 -c: 개행문자를 제외하고 출력.\n\
 -e: $부터 다음 $까지 한글 변환 무시($는 미출력).\n\
-	$를 입력하고 싶으면 두 번 입력.\n\
+    $를 입력하고 싶으면 두 번 입력.\n\
 -E: -e와 달리 $를 그대로 출력.\n\
--t: stdin과 파일에 동시 출력(tee)\n\
+-t: stdin과 파일에 동시 출력. 옵션을 주지 않고 tee를 후처리 필터로 사용할 시\n\
+    입력할 때마다 결과를 볼 수 없었던 점을 감안하여 추가함.\n\
 -T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
 
 	exit(EXIT_SUCCESS);
@@ -576,7 +606,7 @@ int main(int argc, char *argv[])
 			break;
 		case '?':
 			print_error(
-				"사용법: %s [-c] [-e] [-h] [-t|T 파일]\n", argv[0]);
+				"사용법: %s [-c] [-e|E] [-h] [-t|T 파일]\n", argv[0]);
 		}
 	}
 
