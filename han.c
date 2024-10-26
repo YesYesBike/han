@@ -407,9 +407,10 @@ void han_dmo(char chr, han_reg *reg)
 		}
 		break;
 	case 38:					/* ㅡ */
-		if (chr == 'l')
+		if (chr == 'l') {
 			reg->jung = 39;			/* ㅢ */
-		return;
+			return;
+		}
 	}
 	han_insert_p(reg);
 	reg->jung = HAN_T(chr);
