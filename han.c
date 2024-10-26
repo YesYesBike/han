@@ -120,7 +120,7 @@ void han_insert_p(han_reg *reg)
 }
 
 
-//han_insert_p에서 초성, 중성만 있는 게 아닌 경우에 호출
+//han_insert_p에서 초성만, 또는 중성만 있는 게 아닌 경우에 호출
 void han_combine_p(han_reg *reg)
 {
 	han_jong_p(reg);
@@ -132,13 +132,13 @@ void han_combine_p(han_reg *reg)
 }
 
 
-//초성 레지스터에 있는 값을 최종 처리 후 p레지스터에 입력
+//초성만 출력할 경우 p레지스터에 입력하기 전 최종 처리
 void han_cho_p(han_reg *reg)
 {
 	switch (reg->cho) {
 	case 1:
 	case 2:
-		reg->cho -= 1;
+		(reg->cho)--;
 		break;
 	case 41:					/* ㄳ */
 		reg->cho = 2;
@@ -249,8 +249,7 @@ void han_jong_p(han_reg *reg)
 //겹자음 합성. 초성과 종성 두 경우에 맞춰서 유동적으로 적용 가능
 void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 {
-	unsigned buf = *cho_jong;
-	switch (buf) {
+	switch (*cho_jong) {
 	case 1:						/* ㄱ */
 		if (chr == 't') {
 			*cho_jong = 41;			/* ㄳ */
@@ -301,7 +300,6 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 	}
 	han_insert_p(reg);
 	reg->cho = HAN_T(chr);
-	return;
 }
 
 
@@ -386,37 +384,35 @@ void han_dmo(char chr, han_reg *reg)
 		switch (chr) {
 		case 'k':				/* ㅘ */
 			reg->jung = 29;
-			break;
+			return;
 		case 'o':				/* ㅙ */
 			reg->jung = 30;
-			break;
+			return;
 		case 'l':				/* ㅚ */
 			reg->jung = 31;
-			break;
+			return;
 		}
 		break;
 	case 33:					/* ㅜ */
 		switch (chr) {
 		case 'j':				/* ㅝ */
 			reg->jung = 34;
-			break;
+			return;
 		case 'p':				/* ㅞ */
 			reg->jung = 35;
-			break;
+			return;
 		case 'l':				/* ㅟ */
 			reg->jung = 36;
-			break;
+			return;
 		}
 		break;
 	case 38:					/* ㅡ */
 		if (chr == 'l')
 			reg->jung = 39;			/* ㅢ */
-		break;
-	default:
-		han_insert_p(reg);
-		reg->jung = HAN_T(chr);
+		return;
 	}
-
+	han_insert_p(reg);
+	reg->jung = HAN_T(chr);
 }
 
 
@@ -434,7 +430,7 @@ unsigned han_check_reg(han_reg *reg)
 		else
 			return 3;
 	} else {
-		return (reg->jung != 0) ? 4 : 5;
+		return reg->jung ? 4 : 5;
 	}
 }
 
@@ -443,7 +439,7 @@ unsigned han_check_reg(han_reg *reg)
 //1: 겹자음 확인(종성)
 //2: 종성 입력
 //3: 겹자음 확인(초성)
-//4: 글자 출력 후 초성 입력
+//4: p레지스터에 입력 후 초성 입력
 //5: 초성 입력
 void han_ja(char chr, han_reg *reg)
 {
@@ -459,7 +455,7 @@ void han_ja(char chr, han_reg *reg)
 		break;
 	case 4:
 		han_insert_p(reg);
-		han_print_p(reg);
+		//han_print_p(reg);		//XXX 지워도 되는지? 지워도 될지도.
 	case 5:
 		reg->cho = HAN_T(chr);
 		break;

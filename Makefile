@@ -1,6 +1,6 @@
 TARGET = han
 CC = cc
-#CFLAGS = -g
+CFLAGS = -g
 
 $(TARGET): han.c han.h
 	$(CC) $(CFLAGS) -o $@ $<
