@@ -103,13 +103,13 @@ void han_trans(char chr, han_reg *reg)
 //초성,중성,종성 레지스터에 저장된 수를 조합해 p레지스터에 저장
 void han_insert_p(han_reg *reg)
 {
-	unsigned checksum = reg->cho + reg->jung + reg->jong;
-	if (checksum == 0)
+	unsigned sum = reg->cho + reg->jung + reg->jong;
+	if (sum == 0)
 		return;
 	
-	if (reg->cho == checksum)
+	if (reg->cho == sum)
 		han_cho_p(reg);
-	else if (reg->jung == checksum)
+	else if (reg->jung == sum)
 		reg->p = 0x313B + reg->jung;	//0x314F~0x3163
 	else
 		han_combine_p(reg);
@@ -306,16 +306,16 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 //초중종성 레지스터에 값이 있는 상태에서 중성 입력 시 종성 분리
 void han_split_jong(char chr, han_reg *reg)
 {
-	unsigned buffer;
+	unsigned buf;
 	if (reg->jong >= 41) {
-		buffer = han_break(&(reg->jong));
+		buf = han_break(&(reg->jong));
 	} else {
-		buffer = reg->jong;
+		buf = reg->jong;
 		reg->jong = 0;
 	}
 
 	han_insert_p(reg);
-	reg->cho = buffer;
+	reg->cho = buf;
 	reg->jung = HAN_T(chr);
 }
 
@@ -456,7 +456,6 @@ void han_ja(char chr, han_reg *reg)
 		break;
 	case 4:
 		han_insert_p(reg);
-		//han_print_p(reg);		//XXX 지워도 되는지? 지워도 될지도.
 	case 5:
 		reg->cho = HAN_T(chr);
 		break;
@@ -482,10 +481,9 @@ void han_mo(char chr, han_reg *reg)
 		break;
 	case 3:
 		if (reg->cho >= 41) {
-			unsigned buffer = han_break(&(reg->cho));
+			unsigned buf = han_break(&(reg->cho));
 			han_insert_p(reg);
-			reg->cho = buffer;
-			reg->jung = HAN_T(chr);
+			reg->cho = buf;
 		}
 	case 5:
 		reg->jung = HAN_T(chr);
@@ -496,10 +494,11 @@ void han_mo(char chr, han_reg *reg)
 
 //최초 글자 처리. A-z의 글자만 선별해 한글로 변환
 //이스케이프 여부에 따른 처리도 여기에 포함
+//TODO if문을 줄일 수 있는 방법이 있을까?
 void han(wchar_t *str, han_reg *reg)
 {
-	static int escape = 0;
-	static int bef_dollar = 0;
+	static int esc = 0;
+	static int bef_sharp = 0;
 
 	for (int i=0; str[i] != '\0'; i++) {
 		if (reg->p)
@@ -507,28 +506,29 @@ void han(wchar_t *str, han_reg *reg)
 
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
-		if (str[i] == '$' && reg->flag & HAN_FLAG_E) {
-			if (escape == 0) {
+		if (str[i] == '#' && reg->flag & HAN_FLAG_E) {
+			if (esc == 0) {
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
-			escape = escape ? 0 : 1;
+			esc = esc ? 0 : 1;
 
+			//-E일 때 bef_sharp는 무시
 			if (reg->flag & HAN_FLAG_EE) {
-				han_putc(reg, '$');
+				han_putc(reg, '#');
 				continue;
 			}
-			if (bef_dollar) {
-				bef_dollar = 0;
-				han_putc(reg, '$');
+			if (bef_sharp) {
+				bef_sharp = 0;
+				han_putc(reg, '#');
 				continue;
 			}
-			bef_dollar = 1;
+			bef_sharp = 1;
 			continue;
 		}
 
-		bef_dollar = 0;
-		if (escape) {
+		bef_sharp = 0;
+		if (esc) {
 			han_putc(reg, str[i]);
 			continue;
 		}
@@ -553,9 +553,9 @@ void help(void)
 옵션\n\
 -h: 지금 보고 있는 것.\n\
 -c: 개행문자를 제외하고 출력.\n\
--e: $부터 다음 $까지 한글 변환 무시($는 미출력).\n\
-    $를 입력하고 싶으면 두 번 입력.\n\
--E: -e와 달리 $를 그대로 출력.\n\
+-e: #부터 다음 #까지 한글 변환 무시(#는 미출력).\n\
+    #를 입력하고 싶으면 두 번 입력.\n\
+-E: -e와 달리 #를 그대로 출력.\n\
 -t: stdin과 파일에 동시 출력. 옵션을 주지 않고 tee를 후처리 필터로 사용할 시\n\
     입력할 때마다 결과를 볼 수 없었던 점을 감안하여 추가함.\n\
 -T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
@@ -576,7 +576,7 @@ void print_error(char *fmt, ...)
 int main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
-	wchar_t buffer[BUFSIZE];
+	wchar_t buf[BUFSIZE];
 	han_reg reg = {};
 	int opt;
 	opterr = 0;
@@ -607,8 +607,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	while (fgetws(buffer, BUFSIZE, stdin) != NULL)
-		han(buffer, &reg);
+	while (fgetws(buf, BUFSIZE, stdin) != NULL)
+		han(buf, &reg);
 
 	han_insert_p(&reg);
 	han_print_p(&reg);
