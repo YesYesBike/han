@@ -86,16 +86,6 @@ void han_trans(char chr, han_reg *reg)
 	case 'L':	/* ㅣ */
 		han_mo(chr, reg);
 		break;
-
-	case '[':
-	case '\\':
-	case ']':
-	case '^':
-	case '_':
-	case '`':
-		han_insert_p(reg);
-		han_print_p(reg);
-		han_putc(reg, chr);
 	}
 }
 
@@ -533,14 +523,14 @@ void han(wchar_t *str, han_reg *reg)
 			continue;
 		}
 
-		if (str[i]<'A' || str[i]>'z') {
+		if (isalpha(str[i])) {
+			han_trans(str[i], reg);
+		} else {
 			if (reg->cho || reg->jung) {
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
 			han_putc(reg, str[i]);
-		} else {
-			han_trans(str[i], reg);
 		}
 	}
 }

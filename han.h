@@ -1,10 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <wchar.h>
+#include <ctype.h>
 #include <locale.h>
-#include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <wchar.h>
 
 #define BUFSIZE			1024
 #define HAN_T(a)		han_table[(a)-'A']
