@@ -488,7 +488,7 @@ void han_mo(char chr, han_reg *reg)
 void han(wchar_t *str, han_reg *reg)
 {
 	static int esc = 0;
-	static int bef_sharp = 0;
+	static int bef_amp = 0;
 
 	for (int i=0; str[i] != '\0'; i++) {
 		if (reg->p)
@@ -496,28 +496,28 @@ void han(wchar_t *str, han_reg *reg)
 
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
-		if (str[i] == '#' && reg->flag & HAN_FLAG_E) {
+		if (str[i] == '@' && reg->flag & HAN_FLAG_E) {
 			if (esc == 0) {
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
 			esc = esc ? 0 : 1;
 
-			//-E일 때 bef_sharp는 무시
+			//-E일 때 bef_amp는 무시
 			if (reg->flag & HAN_FLAG_EE) {
-				han_putc(reg, '#');
+				han_putc(reg, '@');
 				continue;
 			}
-			if (bef_sharp) {
-				bef_sharp = 0;
-				han_putc(reg, '#');
+			if (bef_amp) {
+				bef_amp = 0;
+				han_putc(reg, '@');
 				continue;
 			}
-			bef_sharp = 1;
+			bef_amp = 1;
 			continue;
 		}
 
-		bef_sharp = 0;
+		bef_amp = 0;
 		if (esc) {
 			han_putc(reg, str[i]);
 			continue;
@@ -543,9 +543,9 @@ void help(void)
 옵션\n\
 -h: 지금 보고 있는 것.\n\
 -c: 개행문자를 제외하고 출력.\n\
--e: #부터 다음 #까지 한글 변환 무시(#는 미출력).\n\
-    #를 입력하고 싶으면 두 번 입력.\n\
--E: -e와 달리 #를 그대로 출력.\n\
+-e: @부터 다음 @까지 한글 변환 무시(@는 미출력).\n\
+    @를 입력하고 싶으면 두 번 입력.\n\
+-E: -e와 달리 @를 그대로 출력.\n\
 -t: stdin과 파일에 동시 출력. 옵션을 주지 않고 tee를 후처리 필터로 사용할 시\n\
     입력할 때마다 결과를 볼 수 없었던 점을 감안하여 추가함.\n\
 -T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
