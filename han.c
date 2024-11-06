@@ -86,6 +86,16 @@ void han_trans(char chr, han_reg *reg)
 	case 'L':	/* ㅣ */
 		han_mo(chr, reg);
 		break;
+	
+	case '[':
+	case '\\':
+	case ']':
+	case '^':
+	case '_':
+	case '`':
+		han_insert_p(reg);
+		han_print_p(reg);
+		han_putc(reg, chr);
 	}
 }
 
@@ -484,7 +494,7 @@ void han_mo(char chr, han_reg *reg)
 
 //최초 글자 처리. A-z의 글자만 선별해 한글로 변환
 //이스케이프 여부에 따른 처리도 여기에 포함
-//TODO if문을 줄일 수 있는 방법이 있을까?
+//XXX if문을 줄일 수 있는 방법이 있을까?
 void han(wchar_t *str, han_reg *reg)
 {
 	static int esc = 0;
@@ -523,7 +533,7 @@ void han(wchar_t *str, han_reg *reg)
 			continue;
 		}
 
-		if (isalpha(str[i])) {
+		if (str[i]>='A' && str[i]<='z') {
 			han_trans(str[i], reg);
 		} else {
 			if (reg->cho || reg->jung) {

@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <locale.h>
 #include <stdarg.h>
 #include <stdint.h>
