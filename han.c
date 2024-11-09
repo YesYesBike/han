@@ -495,10 +495,12 @@ void han_mo(char chr, han_reg *reg)
 //최초 글자 처리. A-z의 글자만 선별해 한글로 변환
 //이스케이프 여부에 따른 처리도 여기에 포함
 //XXX if문을 줄일 수 있는 방법이 있을까?
-void han(wchar_t *str, han_reg *reg)
+void han(wchar_t *str, han_reg *reg, char esc_ch)
 {
 	static int esc = 0;
-	static int bef_amp = 0;
+	static int bef_esc = 0;
+	if(esc_ch == 0)
+		esc_ch = '@';
 
 	for (int i=0; str[i] != '\0'; i++) {
 		if (reg->p)
@@ -506,28 +508,28 @@ void han(wchar_t *str, han_reg *reg)
 
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
-		if (str[i] == '@' && reg->flag & HAN_FLAG_E) {
+		if (str[i] == esc_ch && reg->flag & HAN_FLAG_E) {
 			if (esc == 0) {
 				han_insert_p(reg);
 				han_print_p(reg);
 			}
 			esc = esc ? 0 : 1;
 
-			//-E일 때 bef_amp는 무시
+			//-E일 때 bef_esc는 무시
 			if (reg->flag & HAN_FLAG_EE) {
-				han_putc(reg, '@');
+				han_putc(reg, esc_ch);
 				continue;
 			}
-			if (bef_amp) {
-				bef_amp = 0;
-				han_putc(reg, '@');
+			if (bef_esc) {
+				bef_esc = 0;
+				han_putc(reg, esc_ch);
 				continue;
 			}
-			bef_amp = 1;
+			bef_esc = 1;
 			continue;
 		}
 
-		bef_amp = 0;
+		bef_esc = 0;
 		if (esc) {
 			han_putc(reg, str[i]);
 			continue;
@@ -581,8 +583,9 @@ int main(int argc, char *argv[])
 	int opt;
 	opterr = 0;
 	char t_optstr[] = "w";
+	char esc_ch = 0;
 
-	while ((opt = getopt(argc, argv, "ceEhT:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "c:e::E:hT:t:")) != -1) {
 		switch (opt) {
 		case 'c':
 			reg.flag |= HAN_FLAG_C;
@@ -591,6 +594,8 @@ int main(int argc, char *argv[])
 			reg.flag |= HAN_FLAG_EE;
 		case 'e':
 			reg.flag |= HAN_FLAG_E;
+			esc_ch = optarg[0];
+
 			break;
 		case 'h':
 			help();
@@ -608,7 +613,7 @@ int main(int argc, char *argv[])
 	}
 
 	while (fgetws(buf, BUFSIZE, stdin) != NULL)
-		han(buf, &reg);
+		han(buf, &reg, esc_ch);
 
 	han_insert_p(&reg);
 	han_print_p(&reg);

@@ -26,7 +26,7 @@ typedef struct han_reg {
 
 void		help(void);
 void		print_error(char *fmt, ...);
-void		han(wchar_t *str, han_reg *reg);
+void		han(wchar_t *str, han_reg *reg, char esc_ch);
 void		han_trans(char chr, han_reg *reg);
 void		han_ja(char chr, han_reg *reg);
 void		han_mo(char chr, han_reg *reg);
