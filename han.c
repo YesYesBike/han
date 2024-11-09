@@ -499,8 +499,6 @@ void han(wchar_t *str, han_reg *reg, char esc_ch)
 {
 	static int esc = 0;
 	static int bef_esc = 0;
-	if(esc_ch == 0)
-		esc_ch = '@';
 
 	for (int i=0; str[i] != '\0'; i++) {
 		if (reg->p)
@@ -585,7 +583,7 @@ int main(int argc, char *argv[])
 	char t_optstr[] = "w";
 	char esc_ch = 0;
 
-	while ((opt = getopt(argc, argv, "c:e::E:hT:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "ce:E:hT:t:")) != -1) {
 		switch (opt) {
 		case 'c':
 			reg.flag |= HAN_FLAG_C;
