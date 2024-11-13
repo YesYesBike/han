@@ -6,13 +6,12 @@
 #include <unistd.h>
 #include <wchar.h>
 
-#define BUFSIZE			1024
-#define HAN_T(a)		han_table[(a)-'A']
+#define BUFSIZE			BUFSIZ
+#define HAN_T(a)		han_table[(a) - 'A']
 
 #define HAN_FLAG_C		1
 #define HAN_FLAG_T		1 << 1
 #define HAN_FLAG_E		1 << 2
-#define HAN_FLAG_EE		1 << 3
 
 typedef struct han_reg {
 	uint32_t	flag;

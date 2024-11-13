@@ -18,8 +18,6 @@ inline void han_putc(han_reg *reg, wchar_t chr)
 //p레지스터에 있는 글자 출력 후 비우기
 void han_print_p(han_reg *reg)
 {
-	if (reg->p == 0)
-		return;
 	han_putc(reg, reg->p);
 	reg->p = 0;
 }
@@ -506,15 +504,15 @@ void han(wchar_t *str, han_reg *reg, char esc_ch)
 
 		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
 			continue;
-		if (str[i] == esc_ch && reg->flag & HAN_FLAG_E) {
-			if (esc == 0) {
+		if (str[i] == esc_ch) {
+			if (esc == 0)
 				han_insert_p(reg);
-				han_print_p(reg);
-			}
+
 			esc = esc ? 0 : 1;
 
 			//-E일 때 bef_esc는 무시
-			if (reg->flag & HAN_FLAG_EE) {
+			if (reg->flag & HAN_FLAG_E) {
+				han_print_p(reg);
 				han_putc(reg, esc_ch);
 				continue;
 			}
@@ -536,10 +534,8 @@ void han(wchar_t *str, han_reg *reg, char esc_ch)
 		if (str[i]>='A' && str[i]<='z') {
 			han_trans(str[i], reg);
 		} else {
-			if (reg->cho || reg->jung) {
-				han_insert_p(reg);
-				han_print_p(reg);
-			}
+			han_insert_p(reg);
+			han_print_p(reg);
 			han_putc(reg, str[i]);
 		}
 	}
@@ -550,12 +546,11 @@ void help(void)
 {
 	printf("[한영타 변환기 도움말]\n\
 사용법: 표준 입출력에서 알파벳을 한글로 변환해야 할 상황에서 활용할 수 있음.\n\
-옵션\n\
 -h: 지금 보고 있는 것.\n\
 -c: 개행문자를 제외하고 출력.\n\
--e: @부터 다음 @까지 한글 변환 무시(@는 미출력).\n\
-    @를 입력하고 싶으면 두 번 입력.\n\
--E: -e와 달리 @를 그대로 출력.\n\
+-e: 이스케이프 문자를 지정하여 다음 이스케이프 문자까지 변환 무시. \n\
+    해당 문자를 출력하려면 둘을 붙여쓰면 됨. \n\
+-E: -e와 달리 이스케이프 문자를 그대로 출력.\n\
 -t: stdin과 파일에 동시 출력. 옵션을 주지 않고 tee를 후처리 필터로 사용할 시\n\
     입력할 때마다 결과를 볼 수 없었던 점을 감안하여 추가함.\n\
 -T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
@@ -589,16 +584,14 @@ int main(int argc, char *argv[])
 			reg.flag |= HAN_FLAG_C;
 			break;
 		case 'E':
-			reg.flag |= HAN_FLAG_EE;
-		case 'e':
 			reg.flag |= HAN_FLAG_E;
+		case 'e':
 			esc_ch = optarg[0];
-
 			break;
 		case 'h':
 			help();
 		case 'T':
-			t_optstr[0] = 'a';
+			*t_optstr = 'a';
 		case 't':
 			reg.flag |= HAN_FLAG_T;
 			if ((reg.fd = fopen(optarg, t_optstr)) == NULL)
@@ -606,7 +599,7 @@ int main(int argc, char *argv[])
 			break;
 		case '?':
 			print_error(
-				"사용법: %s [-c] [-e|E] [-h] [-t|T 파일]\n", argv[0]);
+				"사용법: %s [-c] [-e|E 문자] [-h] [-t|T 파일]\n", argv[0]);
 		}
 	}
 
