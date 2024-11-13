@@ -18,6 +18,8 @@ inline void han_putc(han_reg *reg, wchar_t chr)
 //p레지스터에 있는 글자 출력 후 비우기
 void han_print_p(han_reg *reg)
 {
+	if (reg->p == 0)
+		return;
 	han_putc(reg, reg->p);
 	reg->p = 0;
 }
