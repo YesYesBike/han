@@ -13,6 +13,12 @@
 #define HAN_FLAG_T		1 << 1
 #define HAN_FLAG_E		1 << 2
 
+#define CHK_CJJ			0b111
+#define CHK_CJ			0b110
+#define CHK_C			0b100
+#define CHK_J			0b010
+#define CHK_N			0b000
+
 typedef struct han_reg {
 	uint32_t	flag;
 	unsigned 	cho;

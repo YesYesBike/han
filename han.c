@@ -18,6 +18,7 @@ inline void han_putc(han_reg *reg, wchar_t chr)
 //p레지스터에 있는 글자 출력 후 비우기
 void han_print_p(han_reg *reg)
 {
+	//TODO: 버그를 내지 않고 이 구문을 없앨 수 있는 방법을 찾기
 	if (reg->p == 0)
 		return;
 	han_putc(reg, reg->p);
@@ -418,74 +419,55 @@ void han_dmo(char chr, han_reg *reg)
 
 
 //초성,중성,종성 레지스터 상태 확인.
-//1: 초성,중성,종성 다 있음
-//2: 초성,중성만 있음
-//3: 초성만 있음
-//4: 중성만 있음
-//5: 아무 글자도 없음
-unsigned han_check_reg(han_reg *reg)
+//CHK_CJJ: 초성,중성,종성 다 있음
+//CHK_CJ:  초성,중성만 있음
+//CHK_C:   초성만 있음
+//CHK_J:   중성만 있음
+//CHK_N:   아무 글자도 없음
+inline unsigned han_check_reg(han_reg *reg)
 {
-	if (reg->cho != 0) {
-		if (reg->jung != 0)
-			return reg->jong ? 1 : 2;
-		else
-			return 3;
-	} else {
-		return reg->jung ? 4 : 5;
-	}
+	return ((reg->cho != 0)<<2 | (reg->jung != 0)<<1 | (reg->jong != 0));
 }
 
 
-//han_check_reg 확인
-//1: 겹자음 확인(종성)
-//2: 종성 입력
-//3: 겹자음 확인(초성)
-//4: p레지스터에 입력 후 초성 입력
-//5: 초성 입력
 void han_ja(char chr, han_reg *reg)
 {
 	switch (han_check_reg(reg)) {
-	case 1:
+	case CHK_CJJ:
 		han_dja(chr, &(reg->jong), reg);
 		break;
-	case 2:
+	case CHK_CJ:
 		reg->jong = HAN_T(chr);
 		break;
-	case 3:
+	case CHK_C:
 		han_dja(chr, &(reg->cho), reg);
 		break;
-	case 4:
+	case CHK_J:
 		han_insert_p(reg);
-	case 5:
+	case CHK_N:
 		reg->cho = HAN_T(chr);
 		break;
 	}
 }
 
 
-//han_check_reg 확인
-//1: 종성 분리
-//2: 겹모음 입력
-//3: 초성에 올 수 없는 글자(예: ㄳ) 처리 후 중성 입력
-//4: 2와 동일
-//5: 중성 입력
 void han_mo(char chr, han_reg *reg)
 {
 	switch (han_check_reg(reg)) {
-	case 1:
+	case CHK_CJJ:
 		han_split_jong(chr, reg);
 		break;
-	case 2:
-	case 4:
+	case CHK_CJ:
+	case CHK_J:
 		han_dmo(chr, reg);
 		break;
-	case 3:
+	case CHK_C:
 		if (reg->cho >= 41) {
 			unsigned buf = han_break(&(reg->cho));
 			han_insert_p(reg);
 			reg->cho = buf;
 		}
-	case 5:
+	case CHK_N:
 		reg->jung = HAN_T(chr);
 		break;
 	}
