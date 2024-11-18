@@ -324,56 +324,41 @@ void han_split_jong(char chr, han_reg *reg)
 //겹자음 분리. han_dja와 마찬가지
 unsigned han_break(unsigned *cho_jong)
 {
-	unsigned ret;
-
 	switch (*cho_jong) {
 	case 41:				/* ㄳ */
 		*cho_jong = 1;
-		ret = 10;
-		break;
+		return 10;
 	case 42:				/* ㄵ */
 		*cho_jong = 3;
-		ret = 13;
-		break;
+		return 13;
 	case 43:				/* ㄶ */
 		*cho_jong = 3;
-		ret = 19;
-		break;
+		return 19;
 	case 44:				/* ㄺ */
 		*cho_jong = 6;
-		ret = 1;
-		break;
+		return 1;
 	case 45:				/* ㄻ */
 		*cho_jong = 6;
-		ret = 7;
-		break;
+		return 7;
 	case 46:				/* ㄼ */
 		*cho_jong = 6;
-		ret = 8;
-		break;
+		return 8;
 	case 47:				/* ㄽ */
 		*cho_jong = 6;
-		ret = 10;
-		break;
+		return 10;
 	case 48:				/* ㄾ */
 		*cho_jong = 6;
-		ret = 17;
-		break;
+		return 17;
 	case 49:				/* ㄿ */
 		*cho_jong = 6;
-		ret = 18;
-		break;
+		return 18;
 	case 50:				/* ㅀ */
 		*cho_jong = 6;
-		ret = 19;
-		break;
+		return 19;
 	case 51:				/* ㅄ */
 		*cho_jong = 8;
-		ret = 10;
-		break;
+		return 10;
 	}
-
-	return ret;
 }
 
 
