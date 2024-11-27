@@ -124,12 +124,12 @@ void han_insert_p(han_reg *reg)
 //han_insert_p에서 초성만, 또는 중성만 있는 게 아닌 경우에 호출
 void han_combine_p(han_reg *reg)
 {
-	han_jong_p(reg);
-
 	(reg->cho)--;
 	reg->jung -= 20;
+	han_jong_p(reg);
 
-	reg->p = 0xAC00 + (588*reg->cho) + (28*reg->jung) + reg->jong;
+	reg->p = 0xAC00 + (588*reg->cho)
+				+ (28*reg->jung) + reg->jong;
 }
 
 
@@ -467,7 +467,7 @@ void han(wchar_t *str, han_reg *reg, char esc_ch)
 	static int esc = 0;
 	static int bef_esc = 0;
 
-	for (int i=0; str[i] != '\0'; i++) {
+	for (int i = 0; str[i] != '\0'; i++) {
 		if (reg->p)
 			han_print_p(reg);
 
@@ -513,16 +513,16 @@ void han(wchar_t *str, han_reg *reg, char esc_ch)
 
 void help(void)
 {
-	printf("[한영타 변환기 도움말]\n\
-사용법: 표준 입출력에서 알파벳을 한글로 변환해야 할 상황에서 활용할 수 있음.\n\
--h: 지금 보고 있는 것.\n\
--c: 개행문자를 제외하고 출력.\n\
--e: 이스케이프 문자를 지정하여 다음 이스케이프 문자까지 변환 무시. \n\
-    해당 문자를 출력하려면 둘을 붙여쓰면 됨. \n\
--E: -e와 달리 이스케이프 문자를 그대로 출력.\n\
--t: stdin과 파일에 동시 출력. 옵션을 주지 않고 tee를 후처리 필터로 사용할 시\n\
-    입력할 때마다 결과를 볼 수 없었던 점을 감안하여 추가함.\n\
--T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
+	printf("[한영타 변환기 도움말]\n"
+		"사용법: 표준 입출력에서 알파벳을 한글로 변환해야 할 상황에서 활용할 수 있음.\n"
+		"-h: 지금 보고 있는 것.\n"
+		"-c: 개행문자를 제외하고 출력.\n"
+		"-e: 이스케이프 문자를 지정하여 다음 이스케이프 문자까지 변환 무시. \n"
+		"    해당 문자를 출력하려면 둘을 붙여쓰면 됨. \n"
+		"-E: -e와 달리 이스케이프 문자를 그대로 출력.\n"
+		"-t: stdin과 파일에 동시 출력. 옵션을 주지 않고 tee를 후처리 필터로 사용할 시\n"
+		"    입력할 때마다 결과를 볼 수 없었던 점을 감안하여 추가함.\n"
+		"-T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
 
 	exit(EXIT_SUCCESS);
 }
@@ -543,9 +543,11 @@ int main(int argc, char *argv[])
 	wchar_t buf[BUFSIZE];
 	han_reg reg = {};
 	int opt;
-	opterr = 0;
+	extern int opterr;
+
 	char t_optstr[] = "w";
 	char esc_ch = 0;
+	opterr = 0;
 
 	while ((opt = getopt(argc, argv, "ce:E:hT:t:")) != -1) {
 		switch (opt) {
