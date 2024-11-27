@@ -8,9 +8,13 @@ static const char han_table[] = {
 	33, 21, 25, 8,  1,  3,  10, 26, 18, 13, 17, 32, 16
 };
 
-inline void han_putc(han_reg *reg, wchar_t chr)
+static char esc_ch = 0;
+static int esc = 0;
+static int flag = 0;
+
+inline void han_putc(han_reg *reg, const wchar_t chr)
 {
-	if (reg->flag & HAN_FLAG_T)
+	if (flag & HAN_FLAG_T)
 		fputwc(chr, reg->fd);
 	putwchar(chr);
 }
@@ -27,7 +31,7 @@ void han_print_p(han_reg *reg)
 
 
 //chr에 해당하는 글자를 한글로 처리
-void han_trans(char chr, han_reg *reg)
+void han_trans(han_reg *reg, const char chr)
 {
 	switch (chr) {
 	case 'r':	/* ㄱ */
@@ -58,7 +62,7 @@ void han_trans(char chr, han_reg *reg)
 	case 'V':	/* ㅍ */
 	case 'g':	/* ㅎ */
 	case 'G':	/* ㅎ */
-		han_ja(chr, reg);
+		han_ja(reg, chr);
 		break;
 
 	case 'k':	/* ㅏ */
@@ -85,7 +89,7 @@ void han_trans(char chr, han_reg *reg)
 	case 'M':	/* ㅡ */
 	case 'l':	/* ㅣ */
 	case 'L':	/* ㅣ */
-		han_mo(chr, reg);
+		han_mo(reg, chr);
 		break;
 	
 	case '[':
@@ -104,7 +108,7 @@ void han_trans(char chr, han_reg *reg)
 //초성,중성,종성 레지스터에 저장된 수를 조합해 p레지스터에 저장
 void han_insert_p(han_reg *reg)
 {
-	unsigned sum = reg->cho + reg->jung + reg->jong;
+	uint32_t sum = reg->cho + reg->jung + reg->jong;
 	if (sum == 0)
 		return;
 	
@@ -248,7 +252,7 @@ void han_jong_p(han_reg *reg)
 
 
 //겹자음 합성. 초성과 종성 두 경우에 맞춰서 유동적으로 적용 가능
-void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
+void han_dja(han_reg *reg, uint32_t *cho_jong, const char chr)
 {
 	switch (*cho_jong) {
 	case 1:						/* ㄱ */
@@ -305,9 +309,9 @@ void han_dja(char chr, unsigned *cho_jong, han_reg *reg)
 
 
 //초중종성 레지스터에 값이 있는 상태에서 중성 입력 시 종성 분리
-void han_split_jong(char chr, han_reg *reg)
+void han_split_jong(han_reg *reg, const char chr)
 {
-	unsigned buf;
+	uint32_t buf;
 	if (reg->jong >= 41) {
 		buf = han_break(&(reg->jong));
 	} else {
@@ -322,7 +326,7 @@ void han_split_jong(char chr, han_reg *reg)
 
 
 //겹자음 분리. han_dja와 마찬가지
-unsigned han_break(unsigned *cho_jong)
+uint32_t han_break(uint32_t *cho_jong)
 {
 	switch (*cho_jong) {
 	case 41:				/* ㄳ */
@@ -363,7 +367,7 @@ unsigned han_break(unsigned *cho_jong)
 
 
 //겹모음
-void han_dmo(char chr, han_reg *reg)
+void han_dmo(han_reg *reg, const char chr)
 {
 	switch (reg->jung) {
 	case 28:					/* ㅗ */
@@ -409,23 +413,23 @@ void han_dmo(char chr, han_reg *reg)
 //CHK_C:   초성만 있음
 //CHK_J:   중성만 있음
 //CHK_N:   아무 글자도 없음
-inline unsigned han_check_reg(han_reg *reg)
+inline uint32_t han_check_reg(const han_reg *reg)
 {
 	return ((reg->cho != 0)<<2 | (reg->jung != 0)<<1 | (reg->jong != 0));
 }
 
 
-void han_ja(char chr, han_reg *reg)
+void han_ja(han_reg *reg, const char chr)
 {
 	switch (han_check_reg(reg)) {
 	case CHK_CJJ:
-		han_dja(chr, &(reg->jong), reg);
+		han_dja(reg, &(reg->jong), chr);
 		break;
 	case CHK_CJ:
 		reg->jong = HAN_T(chr);
 		break;
 	case CHK_C:
-		han_dja(chr, &(reg->cho), reg);
+		han_dja(reg, &(reg->cho), chr);
 		break;
 	case CHK_J:
 		han_insert_p(reg);
@@ -436,19 +440,19 @@ void han_ja(char chr, han_reg *reg)
 }
 
 
-void han_mo(char chr, han_reg *reg)
+void han_mo(han_reg *reg, const char chr)
 {
 	switch (han_check_reg(reg)) {
 	case CHK_CJJ:
-		han_split_jong(chr, reg);
+		han_split_jong(reg, chr);
 		break;
 	case CHK_CJ:
 	case CHK_J:
-		han_dmo(chr, reg);
+		han_dmo(reg, chr);
 		break;
 	case CHK_C:
 		if (reg->cho >= 41) {
-			unsigned buf = han_break(&(reg->cho));
+			uint32_t buf = han_break(&(reg->cho));
 			han_insert_p(reg);
 			reg->cho = buf;
 		}
@@ -462,16 +466,15 @@ void han_mo(char chr, han_reg *reg)
 //최초 글자 처리. A-z의 글자만 선별해 한글로 변환
 //이스케이프 여부에 따른 처리도 여기에 포함
 //XXX if문을 줄일 수 있는 방법이 있을까?
-void han(wchar_t *str, han_reg *reg, char esc_ch)
+void han(const wchar_t *str, han_reg *reg)
 {
-	static int esc = 0;
 	static int bef_esc = 0;
 
 	for (int i = 0; str[i] != '\0'; i++) {
 		if (reg->p)
 			han_print_p(reg);
 
-		if (str[i] == '\n' && reg->flag & HAN_FLAG_C)
+		if (str[i] == '\n' && flag & HAN_FLAG_C)
 			continue;
 		if (str[i] == esc_ch) {
 			if (esc == 0)
@@ -480,7 +483,7 @@ void han(wchar_t *str, han_reg *reg, char esc_ch)
 			esc = esc ? 0 : 1;
 
 			//-E일 때 bef_esc는 무시
-			if (reg->flag & HAN_FLAG_E) {
+			if (flag & HAN_FLAG_E) {
 				han_print_p(reg);
 				han_putc(reg, esc_ch);
 				continue;
@@ -501,7 +504,7 @@ void han(wchar_t *str, han_reg *reg, char esc_ch)
 		}
 
 		if (str[i]>='A' && str[i]<='z') {
-			han_trans(str[i], reg);
+			han_trans(reg, str[i]);
 		} else {
 			han_insert_p(reg);
 			han_print_p(reg);
@@ -517,9 +520,11 @@ void help(void)
 		"사용법: 표준 입출력에서 알파벳을 한글로 변환해야 할 상황에서 활용할 수 있음.\n"
 		"-h: 지금 보고 있는 것.\n"
 		"-c: 개행문자를 제외하고 출력.\n"
-		"-e: 이스케이프 문자를 지정하여 다음 이스케이프 문자까지 변환 무시. \n"
-		"    해당 문자를 출력하려면 둘을 붙여쓰면 됨. \n"
+		"-e: 이스케이프 문자를 지정하여 다음 이스케이프 문자까지 변환 무시.\n"
+		"    해당 문자를 출력하려면 둘을 붙여쓰면 됨.\n"
 		"-E: -e와 달리 이스케이프 문자를 그대로 출력.\n"
+		"-o: -e와 반대로 지정한 부분만 한글로 변환.\n"
+		"-O: -E와 반대.\n"
 		"-t: stdin과 파일에 동시 출력. 옵션을 주지 않고 tee를 후처리 필터로 사용할 시\n"
 		"    입력할 때마다 결과를 볼 수 없었던 점을 감안하여 추가함.\n"
 		"-T: -t와 기존 파일에 덧붙이는 것 빼고 동일\n");
@@ -546,41 +551,46 @@ int main(int argc, char *argv[])
 	extern int opterr;
 
 	char t_optstr[] = "w";
-	char esc_ch = 0;
 	opterr = 0;
 
-	while ((opt = getopt(argc, argv, "ce:E:hT:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "ce:E:ho:O:T:t:")) != -1) {
 		switch (opt) {
 		case 'c':
-			reg.flag |= HAN_FLAG_C;
+			flag |= HAN_FLAG_C;
 			break;
 		case 'E':
-			reg.flag |= HAN_FLAG_E;
+			flag |= HAN_FLAG_E;
 		case 'e':
+MAIN_ESCAPE:
 			esc_ch = optarg[0];
 			break;
 		case 'h':
 			help();
+		case 'O':
+			flag |= HAN_FLAG_E;
+		case 'o':
+			esc = 1;
+			goto MAIN_ESCAPE;
 		case 'T':
 			*t_optstr = 'a';
 		case 't':
-			reg.flag |= HAN_FLAG_T;
+			flag |= HAN_FLAG_T;
 			if ((reg.fd = fopen(optarg, t_optstr)) == NULL)
 				print_error("%s: open error\n", optarg);
 			break;
 		case '?':
 			print_error(
-				"사용법: %s [-c] [-e|E 문자] [-h] [-t|T 파일]\n", argv[0]);
+				"사용법: %s [-c] [-e|E|o|O 문자] [-h] [-t|T 파일]\n", argv[0]);
 		}
 	}
 
 	while (fgetws(buf, BUFSIZE, stdin) != NULL)
-		han(buf, &reg, esc_ch);
+		han(buf, &reg);
 
 	han_insert_p(&reg);
 	han_print_p(&reg);
 
-	if (reg.flag & HAN_FLAG_T) {
+	if (flag & HAN_FLAG_T) {
 		//TODO 여러 파일
 		if (fclose(reg.fd) != 0)
 			print_error("close error\n");
